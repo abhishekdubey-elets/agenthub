@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-ink text-white/90 antialiased;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Selection */
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #fff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  border: 3px solid #09090b;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      120deg,
+      #ffffff 0%,
+      #c4b5fd 45%,
+      #93c5fd 75%,
+      #ffffff 100%
+    );
+  }
+  .text-gradient-accent {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(120deg, #a78bfa, #818cf8 50%, #38bdf8);
+  }
+  /* Glass surface */
+  .glass {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.02)
+    );
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-strong {
+    background: linear-gradient(
+      180deg,
+      rgba(17, 24, 39, 0.85),
+      rgba(9, 9, 11, 0.75)
+    );
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  /* Subtle dotted grid background */
+  .bg-dotgrid {
+    background-image: radial-gradient(
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    );
+    background-size: 28px 28px;
+  }
+  /* Animated gradient border wrapper */
+  .glow-border {
+    position: relative;
+    border-radius: 24px;
+  }
+  .glow-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      130deg,
+      rgba(167, 139, 250, 0.8),
+      rgba(99, 102, 241, 0.2),
+      rgba(56, 189, 248, 0.8)
+    );
+    background-size: 200% 200%;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: border-flow 4s ease infinite;
+    pointer-events: none;
+  }
+}
+
+/* Markdown output (chat / agent results) */
+.prose-agent h1,
+.prose-agent h2 {
+  @apply mb-2 mt-4 text-lg font-semibold text-white;
+}
+.prose-agent h3 {
+  @apply mb-1 mt-3 text-base font-semibold text-white;
+}
+.prose-agent p {
+  @apply my-2 leading-relaxed text-white/75;
+}
+.prose-agent ul {
+  @apply my-2 list-disc space-y-1 pl-5 text-white/75;
+}
+.prose-agent ol {
+  @apply my-2 list-decimal space-y-1 pl-5 text-white/75;
+}
+.prose-agent table {
+  @apply my-3 w-full border-collapse text-sm;
+}
+.prose-agent th,
+.prose-agent td {
+  @apply border border-white/10 px-2 py-1 text-left;
+}
+.prose-agent strong {
+  @apply font-semibold text-white;
+}
+.prose-agent code {
+  @apply rounded bg-white/10 px-1 text-sm text-violet-400;
+}
