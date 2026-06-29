@@ -15,8 +15,10 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import dynamic from "next/dynamic";
+
+// Client-only to keep react-markdown's ESM deps out of the dev render worker.
+const Markdown = dynamic(() => import("@/components/ui/Markdown"), { ssr: false });
 import AppShell from "@/components/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Agent, AgentRun, api } from "@/lib/api";
@@ -273,9 +275,7 @@ function AgentRunner() {
               animate={{ opacity: 1 }}
               className="prose-agent max-h-[28rem] overflow-y-auto pr-2 text-sm"
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {result.output_text}
-              </ReactMarkdown>
+              <Markdown>{result.output_text}</Markdown>
             </motion.article>
           )}
         </div>
