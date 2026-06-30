@@ -5,12 +5,17 @@ import {
   ArrowLeft,
   Bot,
   CalendarPlus,
+  Check,
+  Download,
   Hash,
   Loader2,
   Mail,
+  Pencil,
   Play,
+  Send,
   Sparkles,
   Wand2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -22,6 +27,7 @@ const Markdown = dynamic(() => import("@/components/ui/Markdown"), { ssr: false 
 import AppShell from "@/components/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Agent, AgentRun, api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 
 export default function AgentPage() {
   return (
@@ -44,6 +50,81 @@ function AgentRunner() {
   const [loading, setLoading] = useState(true);
   const [pulling, setPulling] = useState<string | null>(null);
   const [sourceNotice, setSourceNotice] = useState<string | null>(null);
+
+  // Human checkpoint: edit / approve / send the output.
+  const { user } = useAuth();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [showSend, setShowSend] = useState(false);
+  const [sendTo, setSendTo] = useState("");
+  const [sendSubject, setSendSubject] = useState("");
+  const [asPdf, setAsPdf] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [reportNote, setReportNote] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  function startEdit() {
+    if (!result) return;
+    setDraft(result.output_text);
+    setEditing(true);
+    setReportNote(null);
+  }
+
+  async function saveEdit() {
+    if (!result) return;
+    setSaving(true);
+    try {
+      const updated = await api.updateRun(result.id, draft);
+      setResult(updated);
+      setHistory((h) => h.map((r) => (r.id === updated.id ? updated : r)));
+      setEditing(false);
+      setReportNote({ kind: "ok", text: "Changes saved." });
+    } catch (e) {
+      setReportNote({ kind: "err", text: e instanceof Error ? e.message : "Save failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openSend() {
+    if (!result) return;
+    setSendTo(user?.email ?? "");
+    setSendSubject(`${agent?.title ?? "AgentHub report"} — ${new Date().toLocaleDateString()}`);
+    setShowSend(true);
+    setReportNote(null);
+  }
+
+  async function doSend() {
+    if (!result) return;
+    setSending(true);
+    setReportNote(null);
+    try {
+      await api.sendReport(result.id, { to: sendTo, subject: sendSubject, as_pdf: asPdf });
+      setReportNote({ kind: "ok", text: `Report sent to ${sendTo}.` });
+      setShowSend(false);
+    } catch (e) {
+      setReportNote({ kind: "err", text: e instanceof Error ? e.message : "Send failed." });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function downloadPdf() {
+    if (!result) return;
+    setReportNote(null);
+    try {
+      await api.downloadRunPdf(result.id, `${result.agent_key}-${result.id}.pdf`);
+    } catch (e) {
+      setReportNote({ kind: "err", text: e instanceof Error ? e.message : "Download failed." });
+    }
+  }
+
+  // Reset the checkpoint UI whenever a different run is shown.
+  useEffect(() => {
+    setEditing(false);
+    setShowSend(false);
+    setReportNote(null);
+  }, [result?.id]);
 
   // Data sources an agent can pull real context from.
   const allSources = {
@@ -78,6 +159,7 @@ function AgentRunner() {
     "calendar-audit": ["calendar"],
     "inbox-triage": ["gmail", "slack"],
     "email-batch-drafting": ["gmail"],
+    "eod-shutdown": ["calendar", "slack"],
   };
 
   const agentSources =
@@ -270,13 +352,123 @@ function AgentRunner() {
           )}
 
           {result && (
-            <motion.article
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="prose-agent max-h-[28rem] overflow-y-auto pr-2 text-sm"
-            >
-              <Markdown>{result.output_text}</Markdown>
-            </motion.article>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              {/* Human checkpoint toolbar */}
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                {editing ? (
+                  <>
+                    <button
+                      onClick={saveEdit}
+                      disabled={saving}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-accent-gradient px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60"
+                    >
+                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                      Save changes
+                    </button>
+                    <button
+                      onClick={() => setEditing(false)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs text-white/60 hover:text-white"
+                    >
+                      <X className="h-3.5 w-3.5" /> Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={startEdit}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/70 hover:border-white/15 hover:text-white"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </button>
+                    <button
+                      onClick={downloadPdf}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-xs text-white/70 hover:border-white/15 hover:text-white"
+                    >
+                      <Download className="h-3.5 w-3.5" /> PDF
+                    </button>
+                    <button
+                      onClick={openSend}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3 py-1.5 text-xs font-medium text-violet-200 hover:bg-violet-500/15"
+                    >
+                      <Send className="h-3.5 w-3.5" /> Approve &amp; send
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {reportNote && (
+                <div
+                  className={`mb-3 rounded-xl border px-3 py-2 text-xs ${
+                    reportNote.kind === "ok"
+                      ? "border-mint-500/20 bg-mint-500/5 text-mint-300"
+                      : "border-amber-500/20 bg-amber-500/5 text-amber-200"
+                  }`}
+                >
+                  {reportNote.text}
+                </div>
+              )}
+
+              {/* Send panel */}
+              {showSend && (
+                <div className="mb-4 space-y-2.5 rounded-2xl border border-white/[0.08] bg-ink/40 p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-white/80">
+                    <Mail className="h-4 w-4 text-violet-400" /> Send report
+                  </div>
+                  <input
+                    type="email"
+                    value={sendTo}
+                    onChange={(e) => setSendTo(e.target.value)}
+                    placeholder="recipient@email.com"
+                    className="w-full rounded-lg border border-white/[0.08] bg-ink/60 px-3 py-2 text-sm outline-none focus:border-violet-500/40"
+                  />
+                  <input
+                    value={sendSubject}
+                    onChange={(e) => setSendSubject(e.target.value)}
+                    placeholder="Subject"
+                    className="w-full rounded-lg border border-white/[0.08] bg-ink/60 px-3 py-2 text-sm outline-none focus:border-violet-500/40"
+                  />
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-white/55">
+                    <input
+                      type="checkbox"
+                      checked={asPdf}
+                      onChange={(e) => setAsPdf(e.target.checked)}
+                      className="accent-violet-500"
+                    />
+                    Attach as PDF
+                  </label>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={doSend}
+                      disabled={sending || !sendTo}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-accent-gradient px-4 py-2 text-xs font-medium text-white disabled:opacity-60"
+                    >
+                      {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                      Send
+                    </button>
+                    <button
+                      onClick={() => setShowSend(false)}
+                      className="rounded-lg border border-white/[0.08] px-4 py-2 text-xs text-white/60 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Output: editable textarea or rendered markdown */}
+              {editing ? (
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  rows={16}
+                  className="w-full resize-y rounded-2xl border border-violet-500/30 bg-ink/60 p-4 font-mono text-xs leading-relaxed outline-none focus:border-violet-500/50"
+                />
+              ) : (
+                <article className="prose-agent max-h-[28rem] overflow-y-auto pr-2 text-sm">
+                  <Markdown>{result.output_text}</Markdown>
+                </article>
+              )}
+            </motion.div>
           )}
         </div>
       </div>

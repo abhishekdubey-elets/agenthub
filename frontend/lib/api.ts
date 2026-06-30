@@ -115,6 +115,41 @@ export const api = {
     return request<AgentRun[]>(`/api/agents/${key}/runs`);
   },
 
+  // --- Reports: edit / approve / send / PDF ---
+  async updateRun(runId: number, outputText: string) {
+    return request<AgentRun>(`/api/runs/${runId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ output_text: outputText }),
+    });
+  },
+
+  async sendReport(
+    runId: number,
+    opts: { to: string; subject: string; as_pdf: boolean }
+  ) {
+    return request<{ sent: boolean; to: string }>(`/api/runs/${runId}/send`, {
+      method: "POST",
+      body: JSON.stringify(opts),
+    });
+  },
+
+  async downloadRunPdf(runId: number, filename: string) {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/api/runs/${runId}/pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error(`PDF download failed (${res.status})`);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
+
   async createCheckout() {
     return request<{ checkout_url: string }>("/api/billing/checkout", {
       method: "POST",
