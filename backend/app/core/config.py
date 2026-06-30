@@ -33,8 +33,21 @@ class Settings(BaseSettings):
     slack_client_secret: str = ""
     slack_redirect_uri: str = "http://localhost:8000/api/integrations/slack/callback"
 
+    # Email (SMTP) — for sending reports
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_use_tls: bool = True
+
     # CORS
-    frontend_origin: str = "http://localhost:3000"
+    frontend_origins: str = "http://localhost:3000,http://localhost:3001"
+
+    @property
+    def frontend_origin(self) -> str:
+        """Return the primary (first) frontend origin for redirects."""
+        return self.frontend_origins.split(",")[0].strip()
 
 
 @lru_cache

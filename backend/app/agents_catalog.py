@@ -73,32 +73,68 @@ CATALOG: list[AgentTemplate] = [
         key="eod-shutdown",
         code="PRO-3",
         title="End-of-Day Shutdown Ritual",
-        description="A ten-minute prompt reviewing what got done, what's still open, and tomorrow's top 3.",
+        description="Finish the day intentionally — review progress, capture unfinished work, and plan tomorrow's top 3.",
         category=CATEGORY,
-        input_label="Today's notes",
-        input_placeholder="Brain-dump what you did today, what's still open, anything on your mind...",
-        system_prompt=(
-            "You are an End-of-Day Shutdown agent. From the day's notes produce: "
-            "**✅ Done today** (wins worth noting), **🔄 Still open** (carry-overs with status), "
-            "**🎯 Tomorrow's top 3** (the 3 highest-leverage items), and **🧠 Clear-your-head** "
-            "(loose threads parked so the owner can stop thinking about them). Keep it calm and closing."
+        input_label="Today's activity",
+        input_placeholder=(
+            "Paste today's calendar, planned vs completed tasks, meeting notes, and Slack activity..."
         ),
+        system_prompt=(
+            "Act as an executive productivity coach running an end-of-day shutdown ritual. "
+            "Review today's activity (calendar, planned vs completed tasks, meeting notes, Slack). "
+            "First compare what was planned against what was actually completed, then identify "
+            "outstanding items. Produce exactly these sections as markdown:\n"
+            "## ✅ Completed work\n"
+            "## 📌 Outstanding work\n"
+            "## 🏆 Key accomplishments\n"
+            "## 💡 Lessons learned\n"
+            "## 🎯 Tomorrow's top 3 priorities — the 3 highest-leverage items for tomorrow\n"
+            "## ⏱️ Estimated workload — a realistic read on tomorrow's load (light / moderate / heavy) with why\n"
+            "Be concise. Avoid generic productivity advice — every line must reference the actual activity "
+            "provided. Close on a calm, intentional note."
+        ),
+        sample_inputs=[
+            "Calendar: 9:00 standup, 11:00 vendor sync, 2:00 design review, 4:00 deep work block.\n"
+            "Planned today: submit the proposal, review the analytics dashboard, get vendor approval, draft the blog post.\n"
+            "Completed: proposal submitted; dashboard reviewed.\n"
+            "Meeting notes: vendor wants revised pricing before approving; design review surfaced 2 small UI fixes.\n"
+            "Slack: client asked for a call tomorrow; teammate flagged the blog draft is blocked on brand assets."
+        ],
     ),
     AgentTemplate(
         key="weekly-business-review",
         code="PRO-4",
         title="Weekly Business Review",
-        description="Pulls the week's marketing, sales, and finance numbers into a single review document.",
+        description="An executive dashboard summarizing the week across sales, marketing, finance, operations, and support.",
         category=CATEGORY,
-        input_label="This week's numbers",
-        input_placeholder="Paste marketing, sales and finance metrics for the week (and last week if you have it)...",
-        system_prompt=(
-            "You are a Weekly Business Review analyst. Turn the week's marketing, sales, and finance "
-            "numbers into a one-page review: **Headline** (the single most important takeaway), then "
-            "**Marketing**, **Sales**, **Finance** sections each with the key metrics, week-over-week deltas, "
-            "and a one-line 'so what'. End with **Watch next week** — 2-3 things to keep an eye on. "
-            "Flag anything anomalous."
+        input_label="This week's KPIs",
+        input_placeholder=(
+            "Paste the week's numbers: revenue, pipeline, closed deals, leads, website traffic, campaign ROI, "
+            "support tickets, outstanding invoices, cash flow (and last week's figures for comparison)..."
         ),
+        system_prompt=(
+            "You are a business analyst producing a weekly executive business review. Analyze the supplied "
+            "weekly metrics across sales, marketing, finance, operations, and customer success. Calculate "
+            "week-over-week changes where prior figures are given. Produce exactly these markdown sections:\n"
+            "## Executive Summary — the 2-3 sentence headline read on the week\n"
+            "## Sales — revenue, pipeline, closed deals, leads + WoW deltas\n"
+            "## Marketing — traffic, campaign ROI, lead gen + WoW deltas\n"
+            "## Finance — cash flow, outstanding invoices + WoW deltas\n"
+            "## Operations — throughput / delivery signals\n"
+            "## Customer Success — support tickets, resolution, churn signals\n"
+            "## Risks — concrete business risks evident in the data\n"
+            "## Recommendations — exactly three recommended actions\n"
+            "Support every conclusion with the supplied data. Highlight wins, losses, and unexpected changes. "
+            "Do not speculate beyond what the numbers show; if data for a section is missing, say so plainly."
+        ),
+        sample_inputs=[
+            "Revenue: $128k (last week $112k). Pipeline: $540k (last week $500k). Closed deals: 7 (last week 5). "
+            "New leads: 240 (last week 300).\n"
+            "Website traffic: 18,400 sessions (last week 16,900). Campaign ROI: 3.1x (last week 2.4x).\n"
+            "Cash flow: +$42k. Outstanding invoices: $86k (last week $61k).\n"
+            "Support tickets: 132 opened, 140 closed; CSAT 4.6/5.\n"
+            "Ops: shipped 2.1 features/eng vs 1.8 target."
+        ],
     ),
     AgentTemplate(
         key="decision-journal",

@@ -61,6 +61,17 @@ class AgentRunOut(BaseModel):
         from_attributes = True
 
 
+# --- Reports (edit / approve / send) ---
+class RunUpdate(BaseModel):
+    output_text: str
+
+
+class SendReportRequest(BaseModel):
+    to: EmailStr
+    subject: str = Field(min_length=1, max_length=255)
+    as_pdf: bool = False
+
+
 # --- Billing ---
 class CheckoutSessionOut(BaseModel):
     checkout_url: str
